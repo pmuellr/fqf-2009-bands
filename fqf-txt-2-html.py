@@ -17,7 +17,13 @@ time_stop  =  9
 def hour_to_print(hour):
 	hour = hour % 12
 	if not hour: hour = 12
-	return hour
+	
+	if hour == 12:
+		return "noon"
+	elif hour > 10:
+		return "%dam" % hour
+	else:
+		return "%dpm" % hour
 
 #--------------------------------------------------------------------
 #
@@ -26,7 +32,7 @@ def time_to_units(hh, mm):
 	return ((hh - time_start) * 12 ) + (mm / 5)
 		
 #--------------------------------------------------------------------
-#
+# model a set of blocks
 #--------------------------------------------------------------------
 class Day:
 
@@ -51,7 +57,7 @@ class Day:
 		return self.blocks[:]
 		
 #--------------------------------------------------------------------
-#
+# model a block of entries
 #--------------------------------------------------------------------
 class Block:
 
@@ -119,7 +125,7 @@ class Block:
 		print >>ofile
 
 #--------------------------------------------------------------------
-#
+# model a single entry in a block of entries
 #--------------------------------------------------------------------
 class Entry:
 
@@ -155,7 +161,7 @@ class Entry:
 		print >>ofile, "<span class='entry'>%s</span>" % self.name,
 
 #--------------------------------------------------------------------
-#
+# main program
 #--------------------------------------------------------------------
 units_stop = time_to_units(9,0)
 		
@@ -283,11 +289,11 @@ h1 {
 html_trailer = """
 <div class="day_div">
 Generated using 
-<a href="fqf-txt-2-html.py">fqf-txt-2-html.py</a>
+<a href="fqf-txt-2-html.py"><tt><b>fqf-txt-2-html.py</b></tt></a>
 using data file
-<a href="2009-fqf-bands.txt">2009-fqf-bands.txt</a>,
+<a href="2009-fqf-bands.txt"><tt><b>2009-fqf-bands.txt</b></tt></a>,
 all of which is maintained at
-<a href="http://github.com/pmuellr/fqf-2009-bands/tree/master">github</a>.
+<a href="http://github.com/pmuellr/fqf-2009-bands/tree/master">GitHub</a>.
 </div>
 </body>
 </html>
@@ -310,7 +316,7 @@ for day in days:
 	
 	date_line = "<tr><td width='20%'></td>"
 	for i in xrange(time_start, time_stop + 12):
-		date_line += "<td width='8%%'colspan='12'>%d</td>" % hour_to_print(i)
+		date_line += "<td width='8%%'colspan='12'>%s</td>" % hour_to_print(i)
 	date_line += "</tr>"
 	
 	print >>ofile, size_line
