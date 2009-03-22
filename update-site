@@ -1,0 +1,2 @@
+scp *                   muellerware.org:web/public/fqf-2009
+scp 2009-fqf-bands.html muellerware.org:web/public/fqf-2009/index.html
