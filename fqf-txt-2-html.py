@@ -92,7 +92,7 @@ class Block:
 		
 		for i, entry in enumerate(entries):
 			cols = entry.units_stop - entry.units_start
-			print >>ofile, "<td colspan='%d'>" % cols,
+			print >>ofile, "<td colspan='%d' align='center'>" % cols,
 			entry.to_html(ofile)
 			print >>ofile, "</td>"
 
@@ -149,10 +149,10 @@ class Entry:
 	#----------------------------------------------------------------
 	def to_html(self, ofile):
 		if self.link:
-			print >>ofile, "<a href='%s'>%s</a>" % (self.link, self.name),
+			print >>ofile, "<span class='entry'><a href='%s'>%s</a></span>" % (self.link, self.name),
 			return
 			
-		print >>ofile, self.name,
+		print >>ofile, "<span class='entry'>%s</span>" % self.name,
 
 #--------------------------------------------------------------------
 #
@@ -238,6 +238,10 @@ html_header = """
 <head>
 <title>2009 French Quarter Festival Bands</title>
 <style type="text/css">
+h1 {
+	margin-top:    0em;
+	margin-bottom: 0em;
+}
 .table_header {
 	font-weight: bold;
 	font-size:   120%;
@@ -246,12 +250,16 @@ html_header = """
    background-color: #FFF;
 }
 .day_div {
-    border-width:          1;
+    border-width:          4;
     border-style:          solid;
     margin:                1em;
     padding:               1em;
     -moz-border-radius:    10px;
 	-webkit-border-radius: 10px;
+}
+.entry {
+	font-weight: bold;
+	font-size:   90%;
 }
 :link {
 	color: #000;
@@ -266,10 +274,21 @@ html_header = """
 </style>
 </head>
 <body>
+<div class="day_div">
 <h1>2009 French Quarter Festival Bands</h1>
-"""
+<p>The 'Official' French Quarter Festival site here:<br> 
+<tt><b><a href="http://www.fqfi.org/frenchquarterfest/">http://www.fqfi.org/frenchquarterfest/</a></b></tt>
+</p></div>"""
 
 html_trailer = """
+<div class="day_div">
+Generated using 
+<a href="fqf-txt-2-html.py">fqf-txt-2-html.py</a>
+using data file
+<a href="2009-fqf-bands.txt">2009-fqf-bands.txt</a>,
+all of which is maintained at
+<a href="http://github.com/pmuellr/fqf-2009-bands/tree/master">github</a>.
+</div>
 </body>
 </html>
 """
@@ -278,10 +297,11 @@ print >>ofile, html_comment
 print >>ofile, html_header
 
 for day in days:
+	print >>ofile, ""
 	print >>ofile, "<div class='day_div'>"
 	print >>ofile, "<h1>%s</h1>" % day.name
+	print >>ofile, "<hr>"
 	print >>ofile, "<table cellpadding='2' cellspacing='1'>"
-	print >>ofile, ""
 	
 	size_line = "<tr><td width='20%'></td>"
 	for i in xrange(0, 120):
