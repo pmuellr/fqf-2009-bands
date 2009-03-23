@@ -1,5 +1,28 @@
 #!/usr/bin/env python
 
+#--------------------------------------------------------------------
+# program to generate nice HTML from a text file containing band
+# information for the 2009 French Quarter Festival
+#--------------------------------------------------------------------
+# maintained at http://github.com/pmuellr/fqf-2009-bands/tree/master
+#--------------------------------------------------------------------
+
+#--------------------------------------------------------------------
+#            DO WHAT THE F*CK YOU WANT TO PUBLIC LICENSE
+#                    Version 2, December 2004 
+#
+# Copyright (C) 2009 Patrick Mueller
+#
+# Everyone is permitted to copy and distribute verbatim or modified 
+# copies of this license document, and changing it is allowed as long 
+# as the name is changed. 
+#
+#            DO WHAT THE F*CK YOU WANT TO PUBLIC LICENSE 
+#   TERMS AND CONDITIONS FOR COPYING, DISTRIBUTION AND MODIFICATION 
+#
+#  0. You just DO WHAT THE F*CK YOU WANT TO. 
+#--------------------------------------------------------------------
+
 import os
 import sys
 import re
@@ -12,7 +35,7 @@ time_start = 11
 time_stop  =  9
 
 #--------------------------------------------------------------------
-#
+# convert an hours number to something nicer for print
 #--------------------------------------------------------------------
 def hour_to_print(hour):
 	hour = hour % 12
@@ -26,7 +49,8 @@ def hour_to_print(hour):
 		return "%dpm" % hour
 
 #--------------------------------------------------------------------
-#
+# convert hh:mm to a unit measurement based on: 
+#    12 units/hour, starting at some time_start hour value
 #--------------------------------------------------------------------
 def time_to_units(hh, mm):
 	return ((hh - time_start) * 12 ) + (mm / 5)
@@ -37,21 +61,21 @@ def time_to_units(hh, mm):
 class Day:
 
 	#----------------------------------------------------------------
-	#
+	# constructor
 	#----------------------------------------------------------------
 	def __init__(self, name):
 		self.name    = name
 		self.blocks  = []
 	
 	#----------------------------------------------------------------
-	#
+	# add a block to the day
 	#----------------------------------------------------------------
 	def add_block(self, block):
 		self.blocks.append(block)
 		return self
 		
 	#----------------------------------------------------------------
-	#
+	# return the list of blocks
 	#----------------------------------------------------------------
 	def get_blocks(self):
 		return self.blocks[:]
@@ -62,7 +86,7 @@ class Day:
 class Block:
 
 	#----------------------------------------------------------------
-	#
+	# constructor
 	#----------------------------------------------------------------
 	def __init__(self, name, color):
 		self.name    = name
@@ -70,20 +94,20 @@ class Block:
 		self.entries = []
 
 	#----------------------------------------------------------------
-	#
+	# add an entry to a block
 	#----------------------------------------------------------------
 	def add_entry(self, entry):
 		self.entries.append(entry)
 		return self
 		
 	#----------------------------------------------------------------
-	#
+	# return the list of entries
 	#----------------------------------------------------------------
 	def get_entries(self):
 		return self.entries[:]
 		
 	#----------------------------------------------------------------
-	#
+	# convert a block into HTML as a <tr>
 	#----------------------------------------------------------------
 	def to_html_tr(self, ofile):
 		print >>ofile, "<tr style='background-color: #%s'>" % self.color
@@ -110,7 +134,7 @@ class Block:
 		print >>ofile, "</tr>"
 		
 	#----------------------------------------------------------------
-	#
+	# convert a block into HTML
 	#----------------------------------------------------------------
 	def to_html(self, ofile):
 	
@@ -130,7 +154,7 @@ class Block:
 class Entry:
 
 	#----------------------------------------------------------------
-	#
+	# constructor
 	#----------------------------------------------------------------
 	def __init__(self, hh1, mm1, hh2, mm2, name, link):
 	
@@ -151,10 +175,11 @@ class Entry:
 		if self.link: self.link = self.link.strip()
 		
 	#----------------------------------------------------------------
-	#
+	# convert a block into HTML
 	#----------------------------------------------------------------
 	def to_html(self, ofile):
 		if self.link:
+#			print >>ofile, "<span class='entry'><a target='fqf-band' href='%s'>%s</a></span>" % (self.link, self.name),
 			print >>ofile, "<span class='entry'><a href='%s'>%s</a></span>" % (self.link, self.name),
 			return
 			
@@ -163,6 +188,7 @@ class Entry:
 #--------------------------------------------------------------------
 # main program
 #--------------------------------------------------------------------
+
 units_stop = time_to_units(9,0)
 		
 #--------------------------------------------------------------------
@@ -227,18 +253,26 @@ for line in lines:
 #--------------------------------------------------------------------
 ofile = open(ofile_name, "w")
 
+#--------------------------------------------------------------------
 # things run from 11 - 9, 10 total hours
 # 5 minute increments, 12 increments per hour
 # 10 hours * 12 increments per hour = 120 total increments
+#--------------------------------------------------------------------
 
 blocks_per_table = 8
 
 program_name = os.path.basename(sys.argv[0])
 
+#--------------------------------------------------------------------
+# comment to go at the beginning of the output file
+#--------------------------------------------------------------------
 html_comment = """<!--
 generated by %s on %s
 -->""" % (program_name, time.asctime())
 
+#--------------------------------------------------------------------
+# header of the output file
+#--------------------------------------------------------------------
 html_header = """
 <html>
 <head>
@@ -262,6 +296,7 @@ h1 {
     padding:               1em;
     -moz-border-radius:    10px;
 	-webkit-border-radius: 10px;
+	page-break-before:     always;
 }
 .entry {
 	font-weight: bold;
@@ -277,6 +312,17 @@ h1 {
 	color: #000;
 	text-shadow: #AA0 0.2em 0.2em 0.2em;
 }
+@media print {
+	body { 
+		font-size: 8pt;
+	}
+	.table_header {
+		font-size:   60%;
+	}
+	.entry {
+		font-size: 50%
+	}
+}
 </style>
 </head>
 <body>
@@ -286,9 +332,12 @@ h1 {
 <tt><b><a href="http://www.fqfi.org/frenchquarterfest/">http://www.fqfi.org/frenchquarterfest/</a></b></tt>
 </p></div>"""
 
+#--------------------------------------------------------------------
+# trailer of the output file
+#--------------------------------------------------------------------
 html_trailer = """
 <div class="day_div">
-Generated using 
+Generated on %s using 
 <a href="fqf-txt-2-html.py"><tt><b>fqf-txt-2-html.py</b></tt></a>
 using data file
 <a href="2009-fqf-bands.txt"><tt><b>2009-fqf-bands.txt</b></tt></a>,
@@ -297,11 +346,17 @@ all of which is maintained at
 </div>
 </body>
 </html>
-"""
+""" % (time.asctime())
 
+#--------------------------------------------------------------------
+# write the comment and header
+#--------------------------------------------------------------------
 print >>ofile, html_comment
 print >>ofile, html_header
 
+#--------------------------------------------------------------------
+# write each day
+#--------------------------------------------------------------------
 for day in days:
 	print >>ofile, ""
 	print >>ofile, "<div class='day_div'>"
@@ -316,7 +371,7 @@ for day in days:
 	
 	date_line = "<tr><td width='20%'></td>"
 	for i in xrange(time_start, time_stop + 12):
-		date_line += "<td width='8%%'colspan='12'>%s</td>" % hour_to_print(i)
+		date_line += "<td width='8%%'colspan='12'><span style='color:#00F'>|</span> %s</td>" % hour_to_print(i)
 	date_line += "</tr>"
 	
 	print >>ofile, size_line
@@ -328,6 +383,9 @@ for day in days:
 	print >>ofile, "</table>"
 	print >>ofile, "</div>"
 
+#--------------------------------------------------------------------
+# write the trailer and close
+#--------------------------------------------------------------------
 print >>ofile, html_trailer
 		
 ofile.close()
