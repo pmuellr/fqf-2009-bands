@@ -332,25 +332,46 @@ h1 {
     color: #000;
     text-shadow: #AA0 0.2em 0.2em 0.2em;
 }
-@media print {
-    body { 
-        font-size: 8pt;
-    }
-    .table_header {
-        font-size:   60%;
-    }
-    .entry {
-        font-size: 50%
-    }
-}
 </style>
+<script src="jquery-1.3.2.min.js" type="text/javascript"></script>
+<script type="text/javascript">
+
+var search_text = null
+
+function search_filter(index) {
+    if (!this.title) return false
+    var title = this.title.toUpperCase()
+    if (-1 != title.indexOf(search_text)) return true
+    var content = $(this).text().toUpperCase()
+    return -1 != content.indexOf(search_text)
+}
+
+$(document).ready(function() {
+    var search_box = $("#search-box")
+    
+    search_box.keyup(function() {
+        search_text = search_box.val().toUpperCase()
+        
+        if (search_text == "") {
+            // opacity: -moz-opacity:
+            $(".entry").css("opacity", "1.0").css("-moz-opacity", "1.0")
+        }
+        else {
+            $(".entry").css("opacity", "0.2").css("-moz-opacity", "0.2")
+            $(".entry").filter(search_filter).css("opacity", "1.0").css("-moz-opacity", "1.0")
+        }
+    })
+})
+</script>
 </head>
 <body>
 <div class="day_div">
 <h1>2009 French Quarter Festival Bands</h1>
 <p>The 'Official' French Quarter Festival site here:<br> 
 <tt><b><a href="http://www.fqfi.org/frenchquarterfest/">http://www.fqfi.org/frenchquarterfest/</a></b></tt>
-</p></div>"""
+</p>
+<p>Search: <input id="search-box" type="text" size="20" onchange="javascript:search()"></p>
+</div>"""
 
 #--------------------------------------------------------------------
 # trailer of the output file
