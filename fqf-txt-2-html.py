@@ -122,8 +122,9 @@ class Block:
         
         for i, entry in enumerate(entries):
             cols = entry.units_stop - entry.units_start
+            time = "%02.2d:%02.2d-%02.2d:%02.2d" % (entry.hh1,entry.mm1,entry.hh2,entry.mm2)
             if entry.descr:
-                descr = 'title="%s"' % entry.descr.replace('"',"&quot;")
+                descr = 'title="%s - %s"' % (time, entry.descr.replace('"',"&quot;"))
             else:
                 descr = ""
                 
@@ -161,8 +162,9 @@ class Entry:
     #----------------------------------------------------------------
     # constructor
     #----------------------------------------------------------------
-    def __init__(self, hh1, mm1, hh2, mm2, name, link):
+    def __init__(self, id, hh1, mm1, hh2, mm2, name, link):
     
+        self.id    = id
         self.hh1   = int(hh1.strip())
         self.mm1   = int(mm1.strip())
         self.hh2   = int(hh2.strip())
@@ -181,15 +183,16 @@ class Entry:
         if self.link: self.link = self.link.strip()
         
     #----------------------------------------------------------------
-    # convert a block into HTML
+    # convert an entry into HTML
     #----------------------------------------------------------------
     def to_html(self, ofile, color):
+        fav_link = "<a style='text-decoration:none' href='javascript:toggle_favorite_entry(\"%s\")'><span class='heart' id='%s-c' style='color:#fff''>&#9825;</span></a>" % (self.id, self.id)
         if self.link:
 #           print >>ofile, "<span class='entry'><a target='fqf-band' href='%s'>%s</a></span>" % (self.link, self.name),
-            print >>ofile, "<a href='%s'>%s</a>" % (self.link, self.name),
+            print >>ofile, "%s <a href='%s'>%s</a>" % (fav_link, self.link, self.name),
             return
             
-        print >>ofile, "%s" % (self.name),
+        print >>ofile, "%s %s" % (fav_link, self.name),
 
 #--------------------------------------------------------------------
 # main program
@@ -208,7 +211,7 @@ lines = ifile.readlines()
 ifile.close()
 
 re_day   = re.compile(r"^\S.*day$")
-re_entry = re.compile(r"^(\d{2}):(\d{2}) - (\d{2}):(\d{2}) (.*?)(http\S*)?$")
+re_entry = re.compile(r"^(\S{2}) (\d{2}):(\d{2}) - (\d{2}):(\d{2}) (.*?)(http\S*)?$")
 re_color = re.compile(r"^\*color(.*)$")
 re_descr = re.compile(r"^=(.*)$")
 
@@ -251,14 +254,15 @@ for line in lines:
         continue
     
     # a new entry
-    hh1  = match.group(1)
-    mm1  = match.group(2)
-    hh2  = match.group(3)
-    mm2  = match.group(4)
-    name = match.group(5)
-    link = match.group(6)
+    id   = match.group(1)
+    hh1  = match.group(2)
+    mm1  = match.group(3)
+    hh2  = match.group(4)
+    mm2  = match.group(5)
+    name = match.group(6)
+    link = match.group(7)
     
-    entry = Entry(hh1, mm1, hh2, mm2, name, link)
+    entry = Entry(id, hh1, mm1, hh2, mm2, name, link)
     block.add_entry(entry)
         
 #--------------------------------------------------------------------
@@ -336,7 +340,8 @@ h1 {
 <script src="jquery-1.3.2.min.js" type="text/javascript"></script>
 <script type="text/javascript">
 
-var search_text = null
+var search_text      = null
+var favorites_toggle = null
 
 function search_filter(index) {
     if (!this.title) return false
@@ -346,7 +351,27 @@ function search_filter(index) {
     return -1 != content.indexOf(search_text)
 }
 
+function is_hearted(index) {
+    var char = this.innerHTML 
+    return char == "\u2665"
+}
+
+function favorite_toggled() {
+    if (favorites_toggle.val().length == 0) {
+        $(".entry").css("opacity", "1.0").css("-moz-opacity", "1.0")
+        $("#selected-count").html("All")
+        return
+    }
+    
+    $(".entry").css("opacity", "0.2").css("-moz-opacity", "0.2")
+    var selected = $(".heart").filter(is_hearted).parent().parent().css("opacity", "1.0").css("-moz-opacity", "1.0").size()
+    $("#selected-count").html("" + selected)
+}
+
 $(document).ready(function() {
+    favorites_toggle = $("#favorites-toggle")
+    favorites_toggle.click(favorite_toggled)
+    
     var search_box = $("#search-box")
     
     search_box.keyup(function() {
@@ -355,23 +380,45 @@ $(document).ready(function() {
         if (search_text == "") {
             // opacity: -moz-opacity:
             $(".entry").css("opacity", "1.0").css("-moz-opacity", "1.0")
+            $("#selected-count").html("All")
         }
         else {
+            favorites_toggle.val([])
             $(".entry").css("opacity", "0.2").css("-moz-opacity", "0.2")
-            $(".entry").filter(search_filter).css("opacity", "1.0").css("-moz-opacity", "1.0")
+            var selected = $(".entry").filter(search_filter).css("opacity", "1.0").css("-moz-opacity", "1.0").size()
+            $("#selected-count").html("" + selected)
         }
     })
 })
+
+function toggle_favorite_entry(id) {
+    var element = $("#" + id + "-c")
+    var c = element.html()
+    if (c == "\u2661") {
+        element.html("\u2665")
+    }
+    else {
+        element.html("\u2661")
+    }
+    favorite_toggled()
+}
+
 </script>
 </head>
 <body>
 <div class="day_div">
 <h1>2009 French Quarter Festival Bands</h1>
-<p>The 'Official' French Quarter Festival site here:<br> 
+<p>The 'Official' French Quarter Festival site here:
 <tt><b><a href="http://www.fqfi.org/frenchquarterfest/">http://www.fqfi.org/frenchquarterfest/</a></b></tt>
-</p>
-<p>Search: <input id="search-box" type="text" size="20" onchange="javascript:search()"></p>
-</div>"""
+<p>Search: <input id="search-box" type="text" size="20"">
+<input id='favorites-toggle' type="checkbox"> Only show favorites<br>
+Selected: <span id='selected-count'>All</span></p>
+</div>
+<div class="day_div">
+<span style='color:#D00; font-size:200%'><b>Favorites are not currently remembered!</b></span>
+</div>
+
+"""
 
 #--------------------------------------------------------------------
 # trailer of the output file
