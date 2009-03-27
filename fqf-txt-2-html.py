@@ -72,6 +72,7 @@ class Day:
     #----------------------------------------------------------------
     def add_block(self, block):
         self.blocks.append(block)
+        block.day = self
         return self
         
     #----------------------------------------------------------------
@@ -98,6 +99,7 @@ class Block:
     #----------------------------------------------------------------
     def add_entry(self, entry):
         self.entries.append(entry)
+        entry.block = self
         return self
         
     #----------------------------------------------------------------
@@ -295,6 +297,10 @@ html_header = """
 <head>
 <title>2009 French Quarter Festival Bands</title>
 <style type="text/css">
+@media print {
+.no-print { display: none }  
+}
+
 h1 {
     margin-top:    0em;
     margin-bottom: 0em;
@@ -313,7 +319,9 @@ h1 {
     padding:               1em;
     -moz-border-radius:    10px;
     -webkit-border-radius: 10px;
-    page-break-before:     always;
+}
+.page-break {
+    page-break-after:     always;
 }
 .entry {
     font-weight: bold;
@@ -340,13 +348,17 @@ h1 {
 <script src="jquery-1.3.2.min.js" type="text/javascript"></script>
 <script type="text/javascript">
 
+var search_box       = null
 var search_text      = null
-var favorites_toggle = null
+var report_button    = null
+var showing_report   = false
 
 function search_filter(index) {
-    if (!this.title) return false
-    var title = this.title.toUpperCase()
-    if (-1 != title.indexOf(search_text)) return true
+    if (this.title) {
+        var title = this.title.toUpperCase()
+        if (-1 != title.indexOf(search_text)) return true
+    }
+    
     var content = $(this).text().toUpperCase()
     return -1 != content.indexOf(search_text)
 }
@@ -356,23 +368,21 @@ function is_hearted(index) {
     return char == "\u2665"
 }
 
-function favorite_toggled() {
-    if (favorites_toggle.val().length == 0) {
-        $(".entry").css("opacity", "1.0").css("-moz-opacity", "1.0")
-        $("#selected-count").html("All")
+function report_button_clicked() {
+    showing_report = !showing_report
+    if (showing_report) {
+        report_button.val("Show Schedule")
         return
     }
     
-    $(".entry").css("opacity", "0.2").css("-moz-opacity", "0.2")
-    var selected = $(".heart").filter(is_hearted).parent().parent().css("opacity", "1.0").css("-moz-opacity", "1.0").size()
-    $("#selected-count").html("" + selected)
+    report_button.val("Show Favorites Report")
 }
 
 $(document).ready(function() {
-    favorites_toggle = $("#favorites-toggle")
-    favorites_toggle.click(favorite_toggled)
+    report_button = $("#report-button")
+    report_button.click(report_button_clicked)
     
-    var search_box = $("#search-box")
+    search_box = $("#search-box")
     
     search_box.keyup(function() {
         search_text = search_box.val().toUpperCase()
@@ -383,7 +393,6 @@ $(document).ready(function() {
             $("#selected-count").html("All")
         }
         else {
-            favorites_toggle.val([])
             $(".entry").css("opacity", "0.2").css("-moz-opacity", "0.2")
             var selected = $(".entry").filter(search_filter).css("opacity", "1.0").css("-moz-opacity", "1.0").size()
             $("#selected-count").html("" + selected)
@@ -393,29 +402,37 @@ $(document).ready(function() {
 
 function toggle_favorite_entry(id) {
     var element = $("#" + id + "-c")
+    var row     = $("#" + id + "-r")
+    
     var c = element.html()
     if (c == "\u2661") {
         element.html("\u2665")
+        row.css("display","table-row")
     }
     else {
         element.html("\u2661")
+        row.css("display","none")
     }
-    favorite_toggled()
+    
 }
 
 </script>
 </head>
 <body>
 <div class="day_div">
+<div class="no-print">
 <h1>2009 French Quarter Festival Bands</h1>
+
 <p>The 'Official' French Quarter Festival site here:
 <tt><b><a href="http://www.fqfi.org/frenchquarterfest/">http://www.fqfi.org/frenchquarterfest/</a></b></tt>
+</p>
+
 <p>Search: <input id="search-box" type="text" size="20"">
-<input id='favorites-toggle' type="checkbox"> Only show favorites<br>
 Selected: <span id='selected-count'>All</span></p>
-</div>
 <div class="day_div">
 <span style='color:#D00; font-size:200%'><b>Favorites are not currently remembered!</b></span>
+</div>
+</div>
 </div>
 
 """
@@ -443,8 +460,9 @@ print >>ofile, html_comment
 print >>ofile, html_header
 
 #--------------------------------------------------------------------
-# write each day
+# write the schedule
 #--------------------------------------------------------------------
+print >>ofile, "<div class='no-print'>"
 for day in days:
     print >>ofile, ""
     print >>ofile, "<div class='day_div'>"
@@ -470,10 +488,43 @@ for day in days:
         
     print >>ofile, "</table>"
     print >>ofile, "</div>"
+    
+print >>ofile, "</div>"
+
+#--------------------------------------------------------------------
+# write the favorites report
+#--------------------------------------------------------------------
+print >>ofile, "<h1>Favorites Schedule</h1>"
+
+print >>ofile, "<table width='100%' frame='border' rules='all' cellpadding='3' cellspacing='0' style='font-size:80%'>"
+for day in days:
+    print >>ofile, "<tr>"
+    print >>ofile, "<td colspan='3'><b><span style='font-size:150%%'>%s</span></b></td>" % day.name
+    print >>ofile, "</tr>"
+
+    all_entries = []
+    for block in day.get_blocks():
+        for entry in block.get_entries():
+            all_entries.append(entry)
+            
+    all_entries.sort(key = lambda entry: "%02.2d:%02.2d-%s" % (entry.hh1, entry.mm1, block.name))
+    
+    for entry in all_entries:
+        band_name = entry.name
+        if entry.link: band_name = "<a href='%s'>%s</a>" % (entry.link, entry.name)
+    
+        print >>ofile, "<tr id='%s-r' style='display:none; background-color:#%s'>" % (entry.id, entry.block.color)
+        print >>ofile, "<td valign='top'>%s</td>" % (entry.block.name)
+        print >>ofile, "<td valign='top'><nobr>%02.2d:%02.2d-%02.2d:%02.2d</nobr>" % (entry.hh1, entry.mm1,entry.hh2, entry.mm2)
+        print >>ofile, "<td valign='top'><b>%s</b> - %s</td>" % (band_name, entry.descr)
+        print >>ofile, "</tr>"
+        
+print >>ofile, "</table>"
 
 #--------------------------------------------------------------------
 # write the trailer and close
 #--------------------------------------------------------------------
+print >>ofile, "<p class='page-break'></p>"
 print >>ofile, html_trailer
         
 ofile.close()
