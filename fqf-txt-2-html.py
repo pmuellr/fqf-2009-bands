@@ -203,12 +203,13 @@ class Entry:
     #----------------------------------------------------------------
     def to_html(self, ofile, color):
         fav_link = "<a style='text-decoration:none' href='javascript:toggle_favorite_entry(\"%s\")'><span class='heart' id='%s-c' style='color:#fff''>&#x25EF;</span></a>" % (self.id, self.id)
+        fav_link = "<input type='checkbox' class='fav-checkbox' id='%s-c'>" % (self.id)
         if self.link:
 #           print >>ofile, "<span class='entry'><a target='fqf-band' href='%s'>%s</a></span>" % (self.link, self.name),
-            print >>ofile, "%s <a href='%s'>%s</a>" % (fav_link, self.link, self.name),
+            print >>ofile, "<a href='%s'>%s</a> %s " % (self.link, self.name, fav_link),
             return
             
-        print >>ofile, "%s %s" % (fav_link, self.name),
+        print >>ofile, "%s %s" % (self.name, fav_link),
 
 #--------------------------------------------------------------------
 # main program
