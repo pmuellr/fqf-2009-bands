@@ -35,6 +35,20 @@ time_start = 11
 time_stop  =  9
 
 #--------------------------------------------------------------------
+# convert a color (as a "rgb", 0<=r<16) to a lighter color
+#--------------------------------------------------------------------
+def lighter(color):
+    r = int(color[0], 16)
+    g = int(color[1], 16)
+    b = int(color[2], 16)
+    
+    r = (r + 16) / 2
+    g = (g + 16) / 2
+    b = (b + 16) / 2
+    
+    return "%x%x%x" % (r,g,b)
+
+#--------------------------------------------------------------------
 # convert an hours number to something nicer for print
 #--------------------------------------------------------------------
 def hour_to_print(hour):
@@ -188,7 +202,7 @@ class Entry:
     # convert an entry into HTML
     #----------------------------------------------------------------
     def to_html(self, ofile, color):
-        fav_link = "<a style='text-decoration:none' href='javascript:toggle_favorite_entry(\"%s\")'><span class='heart' id='%s-c' style='color:#fff''>&#9825;</span></a>" % (self.id, self.id)
+        fav_link = "<a style='text-decoration:none' href='javascript:toggle_favorite_entry(\"%s\")'><span class='heart' id='%s-c' style='color:#fff''>&#x25EF;</span></a>" % (self.id, self.id)
         if self.link:
 #           print >>ofile, "<span class='entry'><a target='fqf-band' href='%s'>%s</a></span>" % (self.link, self.name),
             print >>ofile, "%s <a href='%s'>%s</a>" % (fav_link, self.link, self.name),
@@ -348,6 +362,9 @@ h1 {
 <script src="jquery-1.3.2.min.js" type="text/javascript"></script>
 <script type="text/javascript">
 
+var c_circle_open = "\u25EF"
+var c_circle_fill = "\u25C9"
+
 var search_box       = null
 var search_text      = null
 var report_button    = null
@@ -365,7 +382,7 @@ function search_filter(index) {
 
 function is_hearted(index) {
     var char = this.innerHTML 
-    return char == "\u2665"
+    return char == c_circle_fill
 }
 
 function report_button_clicked() {
@@ -405,22 +422,39 @@ function toggle_favorite_entry(id) {
     var row     = $("#" + id + "-r")
     
     var c = element.html()
-    if (c == "\u2661") {
-        element.html("\u2665")
+    if (c == c_circle_open) {
+        element.html(c_circle_fill)
         row.css("display","table-row")
     }
     else {
-        element.html("\u2661")
+        element.html(c_circle_open)
         row.css("display","none")
     }
     
 }
 
+function cookie_set(key,val) {
+    year = 60 * 60 * 24 * 365
+    
+    document.cookie = key + "=" + val + "; max-age=" + year
+}
+
+function cookie_get(key) {
+    key_vals = document.cookie.split(";")
+    for (var i=0; i<key_vals.length; i++) {
+        key_val = key_vals[i].split("=")
+        if (key_val.length < 2) continue
+        
+        if (key == key_val[0]) return key_val[1]
+    }
+    return None
+}
+
 </script>
 </head>
 <body>
-<div class="day_div">
 <div class="no-print">
+<div class="day_div">
 <h1>2009 French Quarter Festival Bands</h1>
 
 <p>The 'Official' French Quarter Festival site here:
@@ -429,9 +463,6 @@ function toggle_favorite_entry(id) {
 
 <p>Search: <input id="search-box" type="text" size="20"">
 Selected: <span id='selected-count'>All</span></p>
-<div class="day_div">
-<span style='color:#D00; font-size:200%'><b>Favorites are not currently remembered!</b></span>
-</div>
 </div>
 </div>
 
@@ -494,7 +525,7 @@ print >>ofile, "</div>"
 #--------------------------------------------------------------------
 # write the favorites report
 #--------------------------------------------------------------------
-print >>ofile, "<h1>Favorites Schedule</h1>"
+print >>ofile, "<h2>2009 French Quarter Festival Favorites</h2>"
 
 print >>ofile, "<table width='100%' frame='border' rules='all' cellpadding='3' cellspacing='0' style='font-size:80%'>"
 for day in days:
@@ -513,7 +544,7 @@ for day in days:
         band_name = entry.name
         if entry.link: band_name = "<a href='%s'>%s</a>" % (entry.link, entry.name)
     
-        print >>ofile, "<tr id='%s-r' style='display:none; background-color:#%s'>" % (entry.id, entry.block.color)
+        print >>ofile, "<tr id='%s-r' style='display:none; background-color:#%s'>" % (entry.id, lighter(entry.block.color))
         print >>ofile, "<td valign='top'>%s</td>" % (entry.block.name)
         print >>ofile, "<td valign='top'><nobr>%02.2d:%02.2d-%02.2d:%02.2d</nobr>" % (entry.hh1, entry.mm1,entry.hh2, entry.mm2)
         print >>ofile, "<td valign='top'><b>%s</b> - %s</td>" % (band_name, entry.descr)
