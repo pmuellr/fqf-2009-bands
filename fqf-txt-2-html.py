@@ -405,6 +405,11 @@ print >>ofile, "</div>"
 #--------------------------------------------------------------------
 print >>ofile, "<h2>2009 French Quarter Festival Favorites</h2>"
 
+print >>ofile, "<p class='no-print no-supports-db' style='font-size:120%; color:#A00'><b>"
+print >>ofile, "Your favorites would be remembered if you used"
+print >>ofile, "<a href='http://www.apple.com/safari/'>Safari 4</a>"
+print >>ofile, "or later.</b></p>"
+
 print >>ofile, "<table width='100%' frame='border' rules='all' cellpadding='3' cellspacing='0' style='font-size:80%'>"
 for day in days:
     print >>ofile, "<tr>"
