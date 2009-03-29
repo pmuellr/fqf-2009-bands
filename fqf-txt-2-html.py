@@ -63,6 +63,15 @@ def hour_to_print(hour):
         return "%dpm" % hour
 
 #--------------------------------------------------------------------
+# convert hh:mm to something nicer for print
+#--------------------------------------------------------------------
+def time_to_print(hh,mm):
+    hh = hh % 12
+    if not hh: hh = 12
+
+    return "%02.2d:%02.2d" % (hh,mm)
+
+#--------------------------------------------------------------------
 # convert hh:mm to a unit measurement based on: 
 #    12 units/hour, starting at some time_start hour value
 #--------------------------------------------------------------------
@@ -221,7 +230,6 @@ units_stop = time_to_units(9,0)
 # read the input file
 #--------------------------------------------------------------------
 ifile_name = "2009-fqf-bands.txt"
-ofile_name = "2009-fqf-bands.html"
 
 ifile = open(ifile_name, "r")
 lines = ifile.readlines()
@@ -283,9 +291,9 @@ for line in lines:
     block.add_entry(entry)
         
 #--------------------------------------------------------------------
-# write the output
+# write the main output
 #--------------------------------------------------------------------
-ofile = open(ofile_name, "w")
+ofile = open("2009-fqf-bands.html", "w")
 
 #--------------------------------------------------------------------
 # things run from 11 - 9, 10 total hours
@@ -326,11 +334,16 @@ html_header = """
 <tt><b><a href="http://www.fqfi.org/frenchquarterfest/">http://www.fqfi.org/frenchquarterfest/</a></b></tt>
 </p>
 
+<p>Bands also
+<a href="2009-fqf-bands-by-venue.html">sorted by venue</a>
+and
+<a href="2009-fqf-bands-by-time.html">sorted by time</a>.
+</p>
+
 <p>Search: <input id="search-box" type="text" size="20"">
 Selected: <span id='selected-count'>All</span></p>
 </div>
 </div>
-
 """
 
 #--------------------------------------------------------------------
@@ -411,7 +424,7 @@ for day in days:
     
         print >>ofile, "<tr id='%s-r' style='display:none; background-color:#%s'>" % (entry.id, lighter(entry.block.color))
         print >>ofile, "<td valign='top'>%s</td>" % (entry.block.name)
-        print >>ofile, "<td valign='top'><nobr>%02.2d:%02.2d-%02.2d:%02.2d</nobr>" % (entry.hh1, entry.mm1,entry.hh2, entry.mm2)
+        print >>ofile, "<td valign='top'><nobr>%s-%s</nobr>" % (time_to_print(entry.hh1, entry.mm1),time_to_print(entry.hh2, entry.mm2))
         print >>ofile, "<td valign='top'><b>%s</b> - %s</td>" % (band_name, entry.descr)
         print >>ofile, "</tr>"
         
@@ -424,3 +437,181 @@ print >>ofile, "<p class='page-break'></p>"
 print >>ofile, html_trailer
         
 ofile.close()
+
+#--------------------------------------------------------------------
+# write the by-venue page
+#--------------------------------------------------------------------
+
+#--------------------------------------------------------------------
+# header of the output file
+#--------------------------------------------------------------------
+html_header = """
+<html>
+<head>
+<title>2009 French Quarter Festival Bands By Venue</title>
+<link rel="stylesheet"    href="2009-fqf-bands.css" type="text/css">
+<link rel="shortcut icon" type="image/png" href="2009-fqf-bands-16x16.png" />
+<link rel="icon"          type="image/png" href="2009-fqf-bands-16x16.png" />
+</head>
+<body>
+<div class="no-print">
+<div class="day_div">
+<h1>2009 French Quarter Festival Bands By Venue</h1>
+
+<p>The 'Official' French Quarter Festival site here:
+<tt><b><a href="http://www.fqfi.org/frenchquarterfest/">http://www.fqfi.org/frenchquarterfest/</a></b></tt>
+</p>
+</div>
+</div>
+"""
+
+#--------------------------------------------------------------------
+# trailer of the output file
+#--------------------------------------------------------------------
+html_trailer = """
+<div class="day_div">
+Generated on %s using 
+<a href="fqf-txt-2-html.py"><tt><b>fqf-txt-2-html.py</b></tt></a>
+using data file
+<a href="2009-fqf-bands.txt"><tt><b>2009-fqf-bands.txt</b></tt></a>,
+all of which is maintained at
+<a href="http://github.com/pmuellr/fqf-2009-bands/tree/master">GitHub</a>.
+</div>
+</body>
+</html>
+""" % (time.asctime())
+
+#--------------------------------------------------------------------
+# write the comment and header
+#--------------------------------------------------------------------
+ofile = open("2009-fqf-bands-by-venue.html", "w")
+print >>ofile, html_comment
+print >>ofile, html_header
+
+#--------------------------------------------------------------------
+# write the body
+#--------------------------------------------------------------------
+for day in days:
+    print >>ofile, "<table class='page-break' width='100%' frame='border' rules='all' cellpadding='3' cellspacing='0' style='font-size:80%'>"
+    print >>ofile, "<tr>"
+    print >>ofile, "<td colspan='3'><b><span style='font-size:150%%'>%s</span></b></td>" % day.name
+    print >>ofile, "</tr>"
+
+    all_entries = []
+    for block in day.get_blocks():
+        color = lighter(block.color)
+        print >>ofile, "<tr style='background-color:#%s'>" % color
+        print >>ofile, "<td colspan='3'><b><span style='font-size:100%%'>%s</span></b></td>" % block.name
+        print >>ofile, "</tr>"
+    
+        for entry in block.get_entries():
+            band_name = entry.name
+            if entry.link: band_name = "<a href='%s'>%s</a>" % (entry.link, entry.name)
+            
+            descr = entry.descr
+            if not descr: descr = ""
+    
+            print >>ofile, "<tr style='background-color:#%s'>" % color
+            print >>ofile, "<td valign='top'>%s</td>" % (entry.block.name)
+            print >>ofile, "<td valign='top'><nobr>%s-%s</nobr>" % (time_to_print(entry.hh1, entry.mm1),time_to_print(entry.hh2, entry.mm2))
+            print >>ofile, "<td valign='top'><b>%s</b> - %s</td>" % (band_name, descr)
+            print >>ofile, "</tr>"
+        
+    print >>ofile, "</table>"
+    print >>ofile, "<p>"
+
+
+#--------------------------------------------------------------------
+# finish up
+#--------------------------------------------------------------------
+print >>ofile, html_trailer
+ofile.close()
+
+#--------------------------------------------------------------------
+# write the by-time page
+#--------------------------------------------------------------------
+
+#--------------------------------------------------------------------
+# header of the output file
+#--------------------------------------------------------------------
+html_header = """
+<html>
+<head>
+<title>2009 French Quarter Festival Bands By Time</title>
+<link rel="stylesheet"    href="2009-fqf-bands.css" type="text/css">
+<link rel="shortcut icon" type="image/png" href="2009-fqf-bands-16x16.png" />
+<link rel="icon"          type="image/png" href="2009-fqf-bands-16x16.png" />
+</head>
+<body>
+<div class="no-print">
+<div class="day_div">
+<h1>2009 French Quarter Festival Bands By Time</h1>
+
+<p>The 'Official' French Quarter Festival site here:
+<tt><b><a href="http://www.fqfi.org/frenchquarterfest/">http://www.fqfi.org/frenchquarterfest/</a></b></tt>
+</p>
+</div>
+</div>
+"""
+
+#--------------------------------------------------------------------
+# trailer of the output file
+#--------------------------------------------------------------------
+html_trailer = """
+<div class="day_div">
+Generated on %s using 
+<a href="fqf-txt-2-html.py"><tt><b>fqf-txt-2-html.py</b></tt></a>
+using data file
+<a href="2009-fqf-bands.txt"><tt><b>2009-fqf-bands.txt</b></tt></a>,
+all of which is maintained at
+<a href="http://github.com/pmuellr/fqf-2009-bands/tree/master">GitHub</a>.
+</div>
+</body>
+</html>
+""" % (time.asctime())
+
+#--------------------------------------------------------------------
+# write the comment and header
+#--------------------------------------------------------------------
+ofile = open("2009-fqf-bands-by-time.html", "w")
+
+print >>ofile, html_comment
+print >>ofile, html_header
+
+#--------------------------------------------------------------------
+# write the body
+#--------------------------------------------------------------------
+for day in days:
+    print >>ofile, "<table class='page-break' width='100%' frame='border' rules='all' cellpadding='3' cellspacing='0' style='font-size:80%'>"
+    print >>ofile, "<tr>"
+    print >>ofile, "<td colspan='3'><b><span style='font-size:150%%'>%s</span></b></td>" % day.name
+    print >>ofile, "</tr>"
+
+    all_entries = []
+    for block in day.get_blocks():
+        for entry in block.get_entries():
+            all_entries.append(entry)
+            
+    all_entries.sort(key = lambda entry: "%02.2d:%02.2d-%s" % (entry.hh1, entry.mm1, block.name))
+    
+    for entry in all_entries:
+        band_name = entry.name
+        if entry.link: band_name = "<a href='%s'>%s</a>" % (entry.link, entry.name)
+        
+        descr = entry.descr
+        if not descr: descr = ""
+    
+        print >>ofile, "<tr style='background-color:#%s'>" % (lighter(entry.block.color))
+        print >>ofile, "<td valign='top'>%s</td>" % (entry.block.name)
+        print >>ofile, "<td valign='top'><nobr>%s-%s</nobr>" % (time_to_print(entry.hh1, entry.mm1),time_to_print(entry.hh2, entry.mm2))
+        print >>ofile, "<td valign='top'><b>%s</b> - %s</td>" % (band_name, descr)
+        print >>ofile, "</tr>"
+        
+    print >>ofile, "</table>"
+
+#--------------------------------------------------------------------
+# finish up
+#--------------------------------------------------------------------
+print >>ofile, html_trailer
+ofile.close()
+
